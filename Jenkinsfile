@@ -2,51 +2,53 @@ pipeline {
     agent any
 
     environment {
-        APP_DIR = "/tmp/my-node-app"
-        EMAIL_RECIPIENTS = "nikhilmali5633@gmail.com"
+        DEPLOY_SERVER = "localhost"
+        DEPLOY_DIR = "/home/jenkins/app"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git url: 'https://github.com/Nrm33/jenkins', branch: 'main'
+                git branch: 'main', url: 'https://github.com/Nrm33/jenkins.git'
             }
         }
 
         stage('Build App') {
             steps {
-                sh '''
-                echo "Installing dependencies..."
-                npm install
-                '''
+                echo 'Installing dependencies...'
+                sh 'npm install'
             }
         }
 
         stage('Deploy to Server') {
             steps {
+                echo 'Deploying application...'
                 sh '''
-                echo "Deploying app..."
-                rm -rf ${APP_DIR:?}/*
-                mkdir -p ${APP_DIR}
-                cp -r * ${APP_DIR}
-                bash deploy/restart_service.sh ${APP_DIR}
+                    mkdir -p $DEPLOY_DIR
+                    cp -r * $DEPLOY_DIR/
                 '''
+            }
+        }
+
+        stage('Restart Service') {
+            steps {
+                sh 'bash deploy/restart_service.sh'
             }
         }
     }
 
     post {
         success {
-            echo "✅ Build and deploy succeeded!"
-            mail to: "${EMAIL_RECIPIENTS}",
-                 subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: "The build succeeded. View details at ${env.BUILD_URL}"
+            echo '✅ Build and deploy successful!'
+            mail to: 'nikhilmali5633@gmail.com',
+                 subject: "Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "Good news! Your Jenkins pipeline completed successfully."
         }
         failure {
-            echo "❌ Build failed!"
-            mail to: "${EMAIL_RECIPIENTS}",
-                 subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: "The build failed. See logs at ${env.BUILD_URL}console"
+            echo '❌ Build failed!'
+            mail to: 'nikhilmali5633@gmail.com',
+                 subject: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "The build failed. Please check the Jenkins logs."
         }
     }
 }
